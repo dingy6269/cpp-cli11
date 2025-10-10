@@ -41,7 +41,6 @@ target_include_directories(cli11_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/CLI11/include
     include
     ${V8_INC}
-    ${V8_ROOT}
 )
 
 target_compile_features(cli11_test PUBLIC cxx_std_20)
