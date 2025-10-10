@@ -5,5 +5,12 @@
         "istream": "cpp",
         "regex": "cpp",
         "cmath": "cpp"
-    }
+    },
+   "clangd.path": "/usr/bin/clangd-18",
+   "clangd.arguments": [
+    "--compile-commands-dir=build",
+    "--background-index",
+    "--all-scopes-completion",
+    "--clang-tidy"
+  ]
 }

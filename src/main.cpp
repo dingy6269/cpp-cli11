@@ -3,6 +3,7 @@
 
 
 int main(int argc, char* argv[]) {
+    
     CLI::App app {"My CLI tool"};
 
     std::string name;
