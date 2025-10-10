@@ -1,10 +1,14 @@
-# .gitignore
 /build/
 *.o
 *.obj
 *.exe
 *.log
 *.cache
+/*.out
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+
+
+
+cli11_test

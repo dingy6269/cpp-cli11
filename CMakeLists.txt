@@ -8,6 +8,14 @@ set(V8_OUT "${V8_ROOT}/out.gn/${V8_BUILD}")
 set(V8_LIB "${V8_OUT}/obj")
 
 
+message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "Generator: ${CMAKE_GENERATOR}")
+
+if(NOT DEFINED CMAKE_CXX_COMPILER)
+  set(CMAKE_C_COMPILER  "/usr/bin/gcc-11"  CACHE FILEPATH "" FORCE)
+  set(CMAKE_CXX_COMPILER "/usr/bin/g++-11" CACHE FILEPATH "" FORCE)
+endif()
+
 if (NOT EXISTS "${V8_INC}/v8.h")
     message(FATAL_ERROR, "V8 headers not found at ${V8_INC}  (expected v8.h). Check V8_ROOT=${V8_ROOT}")    
 endif()
@@ -17,13 +25,17 @@ if(NOT EXISTS "${V8_LIB}/libv8_monolith.a")
 endif()
 
 
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_subdirectory(external/CLI11)
-GG
-add_executable(cli11_test src/main.cpp)
+
+add_executable(cli11_test 
+  src/main.cpp
+  src/sample.cpp
+)
 
 target_include_directories(cli11_test PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/external/CLI11/include
@@ -38,7 +50,8 @@ target_link_libraries(cli11_test PRIVATE CLI11::CLI11)
 target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
+
+# https://v8.dev/blog/pointer-compression damn bro
 target_compile_definitions(cli11_test PRIVATE V8_COMPRESS_POINTERS V8_ENABLE_SANDBOX ) 
 target_compile_options(cli11_test PRIVATE -fno-rtti) 
-
 target_link_options(cli11_test PRIVATE -fuse-ld=lld)
