@@ -8,7 +8,9 @@
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-
-
+/external/*
+!/external/.gitmodules
+!/external/**
+Makefile
 
 cli11_test
