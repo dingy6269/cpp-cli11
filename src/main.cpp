@@ -64,7 +64,11 @@ class V8BridgeProcessor : public V8Bridge {
 public:
   V8BridgeProcessor(Isolate *isolate, Local<String> script)
       : isolate_(isolate), script_(script) {}
-  virtual ~V8BridgeProcessor() {};
+  virtual ~V8BridgeProcessor() {
+    if (!context_.IsEmpty()) {
+      context_.Reset();
+    }
+  };
 
   virtual bool Initialize();
 
@@ -128,12 +132,21 @@ bool V8BridgeProcessor::ExecuteScript(Local<String> script) {
     return false;
   }
 
+  Local<Value> result;
+  if (!compiled_script->Run(context).ToLocal(&result)) {
+    String::Utf8Value error(GetIsolate(), try_catch.Exception());
+    Log(*error);
+    return false;
+  }
+
   return true;
 }
 
 void V8BridgeProcessor::Log(const char *event) {
   printf("Logged: %s\n", event);
 }
+
+
 
 namespace cli_defaults {
 inline constexpr const char *APP_NAME = "cherry";
