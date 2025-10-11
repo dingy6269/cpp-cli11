@@ -1,8 +1,8 @@
 #include "sample.h"
 #include <CLI/CLI.hpp>
 
-#include <stdlib.h>
 #include <map>
+#include <stdlib.h>
 #include <string>
 
 #include "libplatform/libplatform.h"
@@ -12,6 +12,22 @@
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
+
+#include "v8-array-buffer.h"
+#include "v8-context.h"
+#include "v8-exception.h"
+#include "v8-external.h"
+#include "v8-function.h"
+#include "v8-initialization.h"
+#include "v8-isolate.h"
+#include "v8-local-handle.h"
+#include "v8-object.h"
+#include "v8-persistent-handle.h"
+#include "v8-primitive.h"
+#include "v8-script.h"
+#include "v8-snapshot.h"
+#include "v8-template.h"
+#include "v8-value.h"
 
 using std::map;
 using std::string;
@@ -37,9 +53,91 @@ using v8::String;
 using v8::TryCatch;
 using v8::Value;
 
+class V8Bridge {
+public:
+  virtual ~V8Bridge() {}
+
+  virtual bool Initialize() = 0;
+};
+
+class V8BridgeProcessor : public V8Bridge {
+public:
+  V8BridgeProcessor(Isolate *isolate, Local<String> script)
+      : isolate_(isolate), script_(script) {}
+  virtual ~V8BridgeProcessor() {};
+
+  virtual bool Initialize();
+
+  Isolate *GetIsolate() { return isolate_; }
+
+  // Methods
+  static void Log(const char *event);
+
+private:
+  bool ExecuteScript(Local<String> script);
+
+  Isolate *isolate_;
+  Local<String> script_;
+  Global<Context> context_;
+};
+
+static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+  // Checking the number of potential arguments.
+  if (info.Length() < 1)
+    return;
+
+  Isolate *isolate = info.GetIsolate();
+  HandleScope scope(isolate);
+  Local<Value> arg = info[0];
+  String::Utf8Value value(isolate, arg);
+
+  V8BridgeProcessor::Log(*value);
+}
+
+
+bool V8BridgeProcessor::Initialize() {
+  HandleScope handle_scope(GetIsolate());
+
+  Local<ObjectTemplate> global = ObjectTemplate::New(GetIsolate());
+  global->Set(GetIsolate(), "log",
+              FunctionTemplate::New(GetIsolate(), LogCallback));
+
+  Local<v8::Context> context = Context::New(GetIsolate(), nullptr, global);
+  context_.Reset(GetIsolate(), context);
+
+  if (!ExecuteScript(script_)) {
+    return false;
+  }
+
+  return true;
+}
+
+
+bool V8BridgeProcessor::ExecuteScript(Local<String> script) {
+  HandleScope handle_scope(GetIsolate());
+
+  TryCatch try_catch(GetIsolate());
+
+  Local<Context> context(GetIsolate()->GetCurrentContext());
+  Local<Script> compiled_script;
+
+  if (!Script::Compile(context, script).ToLocal(&compiled_script)) {
+    String::Utf8Value error(GetIsolate(), try_catch.Exception());
+    Log(*error);
+
+    return false;
+  }
+
+  return true;
+}
+
+void V8BridgeProcessor::Log(const char *event) {
+  printf("Logged: %s\n", event);
+}
+
 namespace cli_defaults {
-  inline constexpr const char *APP_NAME = "cherry";
-  inline constexpr const char *DEFAULT_FILENAME = "index.js";
+inline constexpr const char *APP_NAME = "cherry";
+inline constexpr const char *DEFAULT_FILENAME = "index.js";
 } // namespace cli_defaults
 
 class CliConfig {
@@ -102,11 +200,8 @@ private:
 
 // }
 
-
-
-
-MaybeLocal<String> read_file(Isolate* isolate, const string& filename) {
-  FILE* file = std::fopen(filename.c_str(), "rb");
+MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
+  FILE *file = std::fopen(filename.c_str(), "rb");
 
   if (file == NULL) {
     return v8::MaybeLocal<String>();
@@ -120,7 +215,7 @@ MaybeLocal<String> read_file(Isolate* isolate, const string& filename) {
   chars.get()[size] = '\0';
 
   for (size_t i = 0; i < size;) {
-    i += std::fread(&chars.get()[i], 1, size -i, file);
+    i += std::fread(&chars.get()[i], 1, size - i, file);
 
     if (std::ferror(file)) {
       std::fclose(file);
@@ -129,18 +224,11 @@ MaybeLocal<String> read_file(Isolate* isolate, const string& filename) {
   }
   std::fclose(file);
 
-
-  std::cout << chars.get() << std::endl;
-
-  MaybeLocal<String> result = String::NewFromUtf8(isolate,
-    chars.get(),
-    NewStringType::kNormal,
-    size
-  );
+  MaybeLocal<String> result =
+      String::NewFromUtf8(isolate, chars.get(), NewStringType::kNormal, size);
 
   return result;
 }
-
 
 int main(int argc, char *argv[]) {
   V8Runtime v8(argv[0]);
@@ -151,8 +239,8 @@ int main(int argc, char *argv[]) {
 
   Isolate::CreateParams create_params;
   create_params.array_buffer_allocator =
-  v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-  Isolate* isolate = Isolate::New(create_params);
+      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  Isolate *isolate = Isolate::New(create_params);
   Isolate::Scope isolate_scope(isolate);
   v8::HandleScope scope(isolate);
 
@@ -161,12 +249,15 @@ int main(int argc, char *argv[]) {
   bool source_loaded = read_file(isolate, config.filename()).ToLocal(&source);
 
   if (!source_loaded) {
-    throw std::runtime_error(
-      "Error reading " + config.filename()
-    );
+    throw std::runtime_error("Error reading " + config.filename());
   };
 
-  return 0;
+  V8BridgeProcessor bridge(isolate, source);
 
-  // return invoke_v8_sample(source);
+  if (!bridge.Initialize()) {
+    fprintf(stderr, "Error initializing processor. \n");
+    return 1;
+  }
+
+  return 0;
 }
