@@ -1,4 +1,4 @@
 #pragma once
+#include <string>
 
-
-int invoke_v8_sample(int argc, char* argv[]);
+int invoke_v8_sample(const std::string& name, char* argv[]);

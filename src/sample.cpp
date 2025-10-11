@@ -14,7 +14,7 @@
 #include "v8-primitive.h"
 #include "v8-script.h"
 
-int invoke_v8_sample(int argc, char* argv[]) {
+int invoke_v8_sample(const std::string& name, char* argv[]) {
   // Initialize V8.
   v8::V8::InitializeICUDefaultLocation(argv[0]);
   v8::V8::InitializeExternalStartupData(argv[0]);
