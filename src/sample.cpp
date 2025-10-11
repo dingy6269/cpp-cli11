@@ -14,6 +14,18 @@
 #include "v8-primitive.h"
 #include "v8-script.h"
 
+// int run_file(const v8::Local<v8::String> source) {
+//   v8::Local<v8::Context> context = v8::Context::New(isolate);
+
+//   v8::Local<v8::Script> script = v8::Script::Compile(
+//     context, source
+//   ).ToLocalChecked();
+  
+//   v8::Local<v8::Value> result = script->Run(context).
+//   ToLocalChecked();
+// }
+
+
 int invoke_v8_sample(const std::string& name, char* argv[]) {
   // Initialize V8.
   v8::V8::InitializeICUDefaultLocation(argv[0]);

@@ -1,6 +1,7 @@
 #include "sample.h"
 #include <CLI/CLI.hpp>
 
+#include <stdlib.h>
 #include <map>
 #include <string>
 
@@ -14,6 +15,27 @@
 
 using std::map;
 using std::string;
+
+using v8::Context;
+using v8::EscapableHandleScope;
+// using v8::External;
+using v8::Function;
+using v8::FunctionTemplate;
+using v8::Global;
+using v8::HandleScope;
+using v8::Isolate;
+using v8::Local;
+using v8::MaybeLocal;
+using v8::Name;
+// using v8::NamedPropertyHandlerConfiguration;
+using v8::NewStringType;
+using v8::Object;
+using v8::ObjectTemplate;
+using v8::PropertyCallbackInfo;
+using v8::Script;
+using v8::String;
+using v8::TryCatch;
+using v8::Value;
 
 namespace cli_defaults {
   inline constexpr const char *APP_NAME = "cherry";
@@ -80,12 +102,71 @@ private:
 
 // }
 
+
+
+
+MaybeLocal<String> read_file(Isolate* isolate, const string& filename) {
+  FILE* file = std::fopen(filename.c_str(), "rb");
+
+  if (file == NULL) {
+    return v8::MaybeLocal<String>();
+  }
+
+  std::fseek(file, 0, SEEK_END);
+  size_t size = ftell(file);
+  rewind(file);
+
+  std::unique_ptr<char[]> chars(new char[size + 1]);
+  chars.get()[size] = '\0';
+
+  for (size_t i = 0; i < size;) {
+    i += std::fread(&chars.get()[i], 1, size -i, file);
+
+    if (std::ferror(file)) {
+      std::fclose(file);
+      return MaybeLocal<String>();
+    }
+  }
+  std::fclose(file);
+
+
+  std::cout << chars.get() << std::endl;
+
+  MaybeLocal<String> result = String::NewFromUtf8(isolate,
+    chars.get(),
+    NewStringType::kNormal,
+    size
+  );
+
+  return result;
+}
+
+
 int main(int argc, char *argv[]) {
   V8Runtime v8(argv[0]);
 
-  auto cfg = CliConfig::parse(argc, argv);
+  auto config = CliConfig::parse(argc, argv);
 
-  cfg.verify();
+  config.verify();
 
-  return invoke_v8_sample(cfg.filename(), argv);
+  Isolate::CreateParams create_params;
+  create_params.array_buffer_allocator =
+  v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  Isolate* isolate = Isolate::New(create_params);
+  Isolate::Scope isolate_scope(isolate);
+  v8::HandleScope scope(isolate);
+
+  Local<v8::String> source;
+
+  bool source_loaded = read_file(isolate, config.filename()).ToLocal(&source);
+
+  if (!source_loaded) {
+    throw std::runtime_error(
+      "Error reading " + config.filename()
+    );
+  };
+
+  return 0;
+
+  // return invoke_v8_sample(source);
 }
