@@ -44,15 +44,18 @@ int invoke_v8_sample(const std::string& name, char* argv[]) {
       static constexpr char my_custom_string[] = "'Hello hello mr v8'";
 
       // Create a string containing the JavaScript source code.
-      v8::Local<v8::String> source =
-          v8::String::NewFromUtf8Literal(isolate, my_custom_string);
+      v8::Local<v8::String> name_v8 = v8::String::NewFromUtf8(isolate, name.c_str(),
+    v8::NewStringType::kNormal).ToLocalChecked();
+
+      // v8::Local<v8::String> source =
+      //     v8::String::NewFromUtf8Literal(isolate, my_custom_string);
       // static V8_WARN_UNUSED_RESULT Local<String> NewFromUtf8Literal(
       //       Isolate* isolate, const char (&literal)[N],
       //       NewStringType type = NewStringType::kNormal) {
 
       // Compile the source code.
       v8::Local<v8::Script> script =
-          v8::Script::Compile(context, source).ToLocalChecked();
+          v8::Script::Compile(context, name_v8).ToLocalChecked();
 
       // Run the script to get the result.
       v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
