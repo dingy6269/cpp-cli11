@@ -63,7 +63,9 @@ public:
 class V8BridgeProcessor : public V8Bridge {
 public:
   V8BridgeProcessor(Isolate *isolate, Local<String> script)
-      : isolate_(isolate), script_(script) {}
+      : isolate_(isolate) {
+    script_.Reset(isolate_, script);
+  }
   virtual ~V8BridgeProcessor() {
     if (!context_.IsEmpty()) {
       context_.Reset();
@@ -81,7 +83,7 @@ private:
   bool ExecuteScript(Local<String> script);
 
   Isolate *isolate_;
-  Local<String> script_;
+  Global<String> script_;
   Global<Context> context_;
 };
 
@@ -98,7 +100,6 @@ static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   V8BridgeProcessor::Log(*value);
 }
 
-
 bool V8BridgeProcessor::Initialize() {
   HandleScope handle_scope(GetIsolate());
 
@@ -108,14 +109,16 @@ bool V8BridgeProcessor::Initialize() {
 
   Local<v8::Context> context = Context::New(GetIsolate(), nullptr, global);
   context_.Reset(GetIsolate(), context);
+  Local<String> script_local = script_.Get(GetIsolate());
 
-  if (!ExecuteScript(script_)) {
+  v8::Context::Scope context_scope(context);
+
+  if (!ExecuteScript(script_local)) {
     return false;
   }
 
   return true;
 }
-
 
 bool V8BridgeProcessor::ExecuteScript(Local<String> script) {
   HandleScope handle_scope(GetIsolate());
@@ -145,8 +148,6 @@ bool V8BridgeProcessor::ExecuteScript(Local<String> script) {
 void V8BridgeProcessor::Log(const char *event) {
   printf("Logged: %s\n", event);
 }
-
-
 
 namespace cli_defaults {
 inline constexpr const char *APP_NAME = "cherry";
