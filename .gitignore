@@ -8,9 +8,9 @@
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-/external/*
-!/external/.gitmodules
-!/external/**
 Makefile
+# TODO: we need to do something about it
+# external + .gitmodules
+external
 
 cli11_test

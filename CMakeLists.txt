@@ -16,6 +16,7 @@ if(NOT DEFINED CMAKE_CXX_COMPILER)
   set(CMAKE_CXX_COMPILER "/usr/bin/g++-11" CACHE FILEPATH "" FORCE)
 endif()
 
+
 if (NOT EXISTS "${V8_INC}/v8.h")
     message(FATAL_ERROR, "V8 headers not found at ${V8_INC}  (expected v8.h). Check V8_ROOT=${V8_ROOT}")    
 endif()
@@ -24,7 +25,9 @@ if(NOT EXISTS "${V8_LIB}/libv8_monolith.a")
   message(FATAL_ERROR "V8 libs not found at ${V8_LIB} (expected libv8_monolith.a). Did you build v8_monolith in ${V8_OUT}?")
 endif()
 
-
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann/json.hpp")
+  message(FATAL_ERROR "Missing external/nlohmann/json.hpp. Run: ./scripts/bootstrap.sh")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,6 +41,7 @@ add_executable(cli11_test
 )
 
 target_include_directories(cli11_test PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/CLI11/include
     include
     ${V8_INC}
