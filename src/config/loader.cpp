@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_set>
 #include <initializer_list>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -34,21 +35,33 @@ struct Person {
 };
 
 class ConfigSerializer {
+  template <class T>
   public:
-    static Person ParsePackageJson(const json& json) {
-      static const std::unordered_set<std::string> allowed{"name", "skills"};
-
-      for (auto it = json.begin(); it != json.end(); it++) {
-        if (!allowed.count(it.key())) {
-          throw std::runtime_error("Unknown key " + it.key());
-        }
-      };
-
-      return ValidatePackageJson(json);
+    static T Parse(const json& json) {
+      // generics work here
+      detail::check_allowed_keys(j, JsonSchema<T>::allowed_keys());
+      JsonSchema<T>::validate(json)
+      
+      return JsonSchema<T>::build();
     }
+};
 
-  private:
-    static Person ValidatePackageJson(const json& json) {
+
+struct Person {
+  std::string name
+  std::vector<std::string> skills
+}
+
+// why like this here
+template<>
+class JsonSchema<Person> {
+  static const std::unordered_set<std::string> allowed_keys() {
+    static const std::unordered_set<std::string> k;
+    
+    return k;
+  }
+
+  static void validate(const json& json) {
       if (!json.contains("name") || !json["name"].is_string()) {
         throw std::runtime_error("Field 'name' is required and must be string");
       }
@@ -70,7 +83,17 @@ class ConfigSerializer {
       if (skills.size() > 256) {
         throw std::runtime_error("too many skills");
       }
+  }
 
-      return Person{std::move(name), std::move(skills)};
-    }
-};
+  static Person build(const json& json) {
+    std::string name = j["name"].get<std::string>();
+    std::vector<std::string> skills = j["skills"].get<std::string>();
+
+    return Person {
+      // we doing std::move here bc
+      // of moving the value from lvalue to rvalue
+      std::move(name),
+      std::move(skills)
+    };
+  }
+}
