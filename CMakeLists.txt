@@ -53,6 +53,8 @@ target_link_libraries(cli11_test PRIVATE CLI11::CLI11)
 target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
+target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
+
 
 # https://v8.dev/blog/pointer-compression damn bro
 target_compile_definitions(cli11_test PRIVATE V8_COMPRESS_POINTERS V8_ENABLE_SANDBOX ) 
