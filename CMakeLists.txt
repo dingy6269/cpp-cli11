@@ -32,8 +32,11 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(external/CLI11)
+add_subdirectory(external/nlohmann)
+add_subdirectory(external/json-schema-validator)
 
 add_executable(cli11_test 
   src/main.cpp
@@ -53,6 +56,9 @@ target_link_libraries(cli11_test PRIVATE CLI11::CLI11)
 target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
+target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
+
+# link flag to a library that does not exist (yet)
 target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
 
 

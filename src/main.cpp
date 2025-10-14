@@ -30,6 +30,8 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
+#include "config/loader.hpp"
+
 
 using std::map;
 using std::string;
@@ -254,17 +256,16 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
 }
 
 int main(int argc, char *argv[]) {
+  const json& schema = JsonSchema<PackageJson>::schema();
+
+  ConfigLoader<PackageJson> config_loader(schema);
+  
   std::ifstream f("example.json");
   json data = json::parse(f);
 
-  Person person = ConfigSerializer::ParsePackageJson(data);
+  auto patch = config_loader.Parse(data);
 
-  std::cout << person.name << std::endl;
-
-  for (const auto& s: person.skills) {
-    std::cout << s << std::endl;
-  }
-
+  std::cout << "Here is your patch" << patch.dump(2) << std::endl;
 
   V8Runtime v8(argv[0]);
 
