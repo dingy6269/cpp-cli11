@@ -12,5 +12,6 @@ Makefile
 # TODO: we need to do something about it
 # external + .gitmodules
 external
+dev
 
 cli11_test

@@ -1,6 +1,5 @@
 #include "sample.h"
 #include <CLI/CLI.hpp>
-#include <nlohmann/json.hpp>
 
 #include <map>
 #include <stdlib.h>
@@ -260,7 +259,7 @@ int main(int argc, char *argv[]) {
 
   ConfigLoader<PackageJson> config_loader(schema);
   
-  std::ifstream f("example.json");
+  std::ifstream f("package.json");
   json data = json::parse(f);
 
   auto patch = config_loader.Parse(data);

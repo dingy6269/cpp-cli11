@@ -25,9 +25,9 @@ if(NOT EXISTS "${V8_LIB}/libv8_monolith.a")
   message(FATAL_ERROR "V8 libs not found at ${V8_LIB} (expected libv8_monolith.a). Did you build v8_monolith in ${V8_OUT}?")
 endif()
 
-if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann/json.hpp")
-  message(FATAL_ERROR "Missing external/nlohmann/json.hpp. Run: ./scripts/bootstrap.sh")
-endif()
+# if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann/json.hpp")
+#   message(FATAL_ERROR "Missing external/nlohmann/json.hpp. Run: ./scripts/bootstrap.sh")
+# endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,12 +35,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(external/CLI11)
-add_subdirectory(external/nlohmann)
 add_subdirectory(external/json-schema-validator)
 
 add_executable(cli11_test 
   src/main.cpp
   src/sample.cpp
+  external/json-schema-validator/src/json-uri.cpp
+  # external/json-schema-validator/src/json-schema.cpp
 )
 
 target_include_directories(cli11_test PRIVATE 
@@ -56,7 +57,7 @@ target_link_libraries(cli11_test PRIVATE CLI11::CLI11)
 target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
-target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
+# target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
 
 # link flag to a library that does not exist (yet)
 target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
