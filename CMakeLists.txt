@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
-project(cli11_test VERSION 0.1.0 LANGUAGES CXX)
+project(cli11_test VERSION 0.1.0 LANGUAGES C CXX)
+
 
 set(V8_ROOT "/v8" CACHE PATH "Path to v8 repo root")
 set(V8_INC "${V8_ROOT}/include")
@@ -39,7 +40,6 @@ add_subdirectory(external/json-schema-validator)
 
 add_executable(cli11_test 
   src/main.cpp
-  src/sample.cpp
   external/json-schema-validator/src/json-uri.cpp
   # external/json-schema-validator/src/json-schema.cpp
 )
@@ -51,17 +51,38 @@ target_include_directories(cli11_test PRIVATE
     ${V8_INC}
 )
 
+include(FetchContent)
+
+FetchContent_Declare(efsw
+  GIT_REPOSITORY https://github.com/SpartanJ/efsw.git
+  GIT_TAG master
+)
+
+FetchContent_MakeAvailable(efsw)
+
+
 target_compile_features(cli11_test PUBLIC cxx_std_20)
 target_link_libraries(cli11_test PRIVATE CLI11::CLI11)
 
 target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
+
+target_include_directories(cli11_test PRIVATE
+  ${efsw_SOURCE_DIR}/include
+)
+
+target_link_libraries(cli11_test PRIVATE efsw)
+
+
 # target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
 
 # link flag to a library that does not exist (yet)
 target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
 
+
+# set(CMAKE_C_COMPILER  "/usr/bin/gcc-13"  CACHE FILEPATH "" FORCE)
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++-13" CACHE FILEPATH "" FORCE)
 
 # https://v8.dev/blog/pointer-compression damn bro
 target_compile_definitions(cli11_test PRIVATE V8_COMPRESS_POINTERS V8_ENABLE_SANDBOX ) 

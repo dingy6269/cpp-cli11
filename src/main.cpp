@@ -29,6 +29,7 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
+
 #include "config/loader.hpp"
 
 
@@ -166,35 +167,31 @@ inline constexpr const char *DEFAULT_FILENAME = "index.js";
 
 class CliConfig {
 public:
-  static CliConfig parse(int argc, char *argv[]) {
-    CliConfig cfg;
-
-    map<string, string> options;
-
+  static std::optional<std::string> parse(int argc, char *argv[]) {
     CLI::App app{cli_defaults::APP_NAME};
 
-    auto *opt = app.add_option("-n, --name", cfg.filename_, "file name")
+    auto run = app.add_subcommand("run", "run file");
+    std::string filename;
+
+    auto* opt = run->add_option("-n, --name", filename, "file name")
                     ->default_val(cli_defaults::DEFAULT_FILENAME);
 
     try {
       app.parse(argc, argv);
+    } catch (const CLI::CallForAllHelp &e) {
+      std::cout << app.help() << std::endl;
+      return std::nullopt;
     } catch (const CLI::ParseError &e) {
-      throw;
+      app.exit(e);
+      return std::nullopt;
+    };
+    
+    if (app.got_subcommand(run)) {
+      return filename;
     }
-
-    return cfg;
+  
+    return std::nullopt;
   }
-
-  void verify() const {
-    if (filename_.empty()) {
-      throw std::runtime_error("No script was specified. \n");
-    }
-  }
-
-  const std::string &filename() const { return filename_; }
-
-private:
-  std::string filename_ = cli_defaults::DEFAULT_FILENAME;
 };
 
 class V8Runtime {
@@ -268,9 +265,11 @@ int main(int argc, char *argv[]) {
 
   V8Runtime v8(argv[0]);
 
-  auto config = CliConfig::parse(argc, argv);
+  auto filename = CliConfig::parse(argc, argv);
 
-  config.verify();
+  if (!filename) {
+    return 0;
+  }
 
   Isolate::CreateParams create_params;
   create_params.array_buffer_allocator =
@@ -281,10 +280,10 @@ int main(int argc, char *argv[]) {
 
   Local<v8::String> source;
 
-  bool source_loaded = read_file(isolate, config.filename()).ToLocal(&source);
+  bool source_loaded = read_file(isolate, *filename).ToLocal(&source);
 
   if (!source_loaded) {
-    throw std::runtime_error("Error reading " + config.filename());
+    throw std::runtime_error("Error reading " + *filename);
   };
 
   V8BridgeProcessor bridge(isolate, source);
