@@ -257,6 +257,30 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
   return result;
 }
 
+void process_file(std::optional<RunConfig> run_config) {
+  Isolate::CreateParams create_params;
+  create_params.array_buffer_allocator =
+      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  Isolate *isolate = Isolate::New(create_params);
+  Isolate::Scope isolate_scope(isolate);
+  v8::HandleScope scope(isolate);
+
+  Local<v8::String> source;
+
+  bool source_loaded = read_file(isolate, run_config->filename).ToLocal(&source);
+
+  if (!source_loaded) {
+    throw std::runtime_error("Error reading " + run_config->filename);
+  };
+
+  V8BridgeProcessor bridge(isolate, source);
+
+  if (!bridge.Initialize()) {
+    fprintf(stderr, "Error initializing processor. \n");
+    return;
+  }
+}
+
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
 
@@ -277,30 +301,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  Isolate::CreateParams create_params;
-  create_params.array_buffer_allocator =
-      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-  Isolate *isolate = Isolate::New(create_params);
-  Isolate::Scope isolate_scope(isolate);
-  v8::HandleScope scope(isolate);
-
-  Local<v8::String> source;
-
-  bool source_loaded = read_file(isolate, run_config->filename).ToLocal(&source);
-
-  if (!source_loaded) {
-    throw std::runtime_error("Error reading " + run_config->filename);
-  };
-
-  V8BridgeProcessor bridge(isolate, source);
-
-  if (!bridge.Initialize()) {
-    fprintf(stderr, "Error initializing processor. \n");
-    return 1;
-  }
+  process_file(run_config);
 
   if (run_config->watch) {
-    watch();
+    watch(process_file);
   }
 
   return 0;

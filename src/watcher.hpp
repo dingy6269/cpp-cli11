@@ -9,6 +9,9 @@
 #include <thread>
 #include <efsw/FileSystem.hpp>
 #include <efsw/System.hpp>
+#include <functional>
+
+#include "main.cpp"
 
 namespace fs = std::filesystem;
 
@@ -46,7 +49,9 @@ public:
     }
 };
 
-int watch()
+using WatchHandler = std::function<void(const std::optional<RunConfig>&)>;
+
+int watch(WatchHandler handler)
 {
     std::string CurrentPath( efsw::System::getProcessPath());
     auto watcher = std::make_unique<efsw::FileWatcher>();
