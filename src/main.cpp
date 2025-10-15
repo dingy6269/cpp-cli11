@@ -29,9 +29,8 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
-
 #include "config/loader.hpp"
-
+#include "watcher.hpp"
 
 using std::map;
 using std::string;
@@ -57,12 +56,7 @@ using v8::String;
 using v8::TryCatch;
 using v8::Value;
 
-
 using json = nlohmann::json;
-
-
-
-
 
 class V8Bridge {
 public:
@@ -165,16 +159,25 @@ inline constexpr const char *APP_NAME = "cherry";
 inline constexpr const char *DEFAULT_FILENAME = "index.js";
 } // namespace cli_defaults
 
+
+struct RunConfig {
+  std::string filename;
+  bool watch;
+};
+
 class CliConfig {
 public:
-  static std::optional<std::string> parse(int argc, char *argv[]) {
+  static std::optional<RunConfig> parse(int argc, char *argv[]) {
     CLI::App app{cli_defaults::APP_NAME};
 
     auto run = app.add_subcommand("run", "run file");
     std::string filename;
+    bool watch;
 
-    auto* opt = run->add_option("-n, --name", filename, "file name")
-                    ->default_val(cli_defaults::DEFAULT_FILENAME);
+    run->add_option("-n, --name", filename, "file name")
+        ->default_val(cli_defaults::DEFAULT_FILENAME);
+    // here was an error (two dashes)
+    run->add_flag("-w", watch, "watch dir")->default_val(false);
 
     try {
       app.parse(argc, argv);
@@ -185,11 +188,14 @@ public:
       app.exit(e);
       return std::nullopt;
     };
-    
+
     if (app.got_subcommand(run)) {
-      return filename;
+      return RunConfig{
+        filename,
+        watch
+      };
     }
-  
+
     return std::nullopt;
   }
 };
@@ -252,10 +258,10 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
 }
 
 int main(int argc, char *argv[]) {
-  const json& schema = JsonSchema<PackageJson>::schema();
+  const json &schema = JsonSchema<PackageJson>::schema();
 
   ConfigLoader<PackageJson> config_loader(schema);
-  
+
   std::ifstream f("package.json");
   json data = json::parse(f);
 
@@ -265,9 +271,9 @@ int main(int argc, char *argv[]) {
 
   V8Runtime v8(argv[0]);
 
-  auto filename = CliConfig::parse(argc, argv);
+  auto run_config = CliConfig::parse(argc, argv);
 
-  if (!filename) {
+  if (!run_config) {
     return 0;
   }
 
@@ -280,10 +286,10 @@ int main(int argc, char *argv[]) {
 
   Local<v8::String> source;
 
-  bool source_loaded = read_file(isolate, *filename).ToLocal(&source);
+  bool source_loaded = read_file(isolate, run_config->filename).ToLocal(&source);
 
   if (!source_loaded) {
-    throw std::runtime_error("Error reading " + *filename);
+    throw std::runtime_error("Error reading " + run_config->filename);
   };
 
   V8BridgeProcessor bridge(isolate, source);
@@ -293,7 +299,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  
+  if (run_config->watch) {
+    watch();
+  }
 
   return 0;
 }
