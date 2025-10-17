@@ -10,28 +10,17 @@
 #include <efsw/FileSystem.hpp>
 #include <efsw/System.hpp>
 #include <functional>
+#include "cli.hpp"
 
-#include "main.cpp"
 
 namespace fs = std::filesystem;
 
-// class UpdateListener:
-//     public efsw:
-
-// int main() {
-
-//     `
-// }
-
-// dbg!(x) equivalent
 #define DBG(x)                                                                     \
     do                                                                             \
     {                                                                              \
         std::osyncstream(std::cerr)                                                \
             << __FILE__ << ':' << __LINE__ << " | " << #x << " = " << (x) << '\n'; \
     } while (0)
-
-// efsw
 
 class UpdateListener : public efsw::FileWatchListener
 {
@@ -62,8 +51,8 @@ int watch(WatchHandler handler)
 
     // std::cout << typeid(*watcher).name() << std::endl;
 
-    UpdateListener *listener = new UpdateListener();
-    efsw::WatchID watchId = watcher->addWatch(CurrentPath, listener, true);
+    UpdateListener *default_listener = new UpdateListener();
+    efsw::WatchID watchId = watcher->addWatch(CurrentPath, default_listener, true);
 
     if (watchId < 0)
     {
