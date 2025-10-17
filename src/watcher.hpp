@@ -13,8 +13,6 @@
 #include <thread>
 #include <typeinfo>
 
-namespace fs = std::filesystem;
-
 class DefaultListener : public efsw::FileWatchListener {
 public:
   void handleFileAction(efsw::WatchID watchid, const std::string &dir,
@@ -36,8 +34,7 @@ int watch_dir(
 
   std::cout << "Watching: " << CurrentPath << std::endl;
 
-  auto add_listener =
-      [&](efsw::FileWatchListener *listener) -> int {
+  auto add_listener = [&](efsw::FileWatchListener *listener) -> int {
     efsw::WatchID watchId = watcher->addWatch(CurrentPath, listener, recursive);
 
     if (watchId < 0) {
@@ -48,14 +45,14 @@ int watch_dir(
     return 0;
   };
 
-                                         
-//  TODO: change the typings
-//  should be array of [watcher_class, directory]
-//  allows only one handler
-//   if (add_listener(new DefaultListener())) return 1;
+  //  TODO: change the typings
+  //  should be array of [watcher_class, directory]
+  //  allows only one handler
+  //   if (add_listener(new DefaultListener())) return 1;
 
   for (auto &listener : custom_listeners) {
-    if (add_listener(listener.get())) return 1;
+    if (add_listener(listener.get()))
+      return 1;
   };
 
   watcher->watch();
