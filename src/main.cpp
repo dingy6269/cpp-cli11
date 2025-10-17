@@ -218,7 +218,7 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
   return result;
 }
 
-void process_file(std::optional<RunConfig> run_config) {
+void process_file(RunConfig run_config) {
   Isolate::CreateParams create_params;
   create_params.array_buffer_allocator =
       v8::ArrayBuffer::Allocator::NewDefaultAllocator();
@@ -228,10 +228,10 @@ void process_file(std::optional<RunConfig> run_config) {
 
   Local<v8::String> source;
 
-  bool source_loaded = read_file(isolate, run_config->filename).ToLocal(&source);
+  bool source_loaded = read_file(isolate, run_config.filename).ToLocal(&source);
 
   if (!source_loaded) {
-    throw std::runtime_error("Error reading " + run_config->filename);
+    throw std::runtime_error("Error reading " + run_config.filename);
   };
 
   V8BridgeProcessor bridge(isolate, source);
@@ -241,6 +241,21 @@ void process_file(std::optional<RunConfig> run_config) {
     return;
   }
 }
+
+
+class WatchFileListener: public efsw::FileWatchListener {
+  public:
+  explicit WatchFileListener(RunConfig run_config): cfg_(std::move(run_config)) {}
+
+  void handleFileAction(efsw::WatchID watchid,
+                            const std::string &dir,
+                            const std::string &filename,
+                            efsw::Action action, std::string oldFilename) override {
+      process_file(cfg_);      
+  }
+  private:
+  RunConfig cfg_;
+};
 
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
@@ -258,14 +273,15 @@ int main(int argc, char *argv[]) {
 
   auto run_config = CliConfig::parse(argc, argv);
 
-  if (!run_config) {
-    return 0;
-  }
+  std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
+  listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));
 
-  process_file(run_config);
+  if (!run_config) return 0;
+
+  process_file(*run_config);
 
   if (run_config->watch) {
-    watch(process_file);
+    watch_dir(std::move(listeners));
   }
 
   return 0;
