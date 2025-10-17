@@ -13,6 +13,19 @@
 #include <thread>
 #include <typeinfo>
 
+enum DebouncedEventKind {
+    Update,
+    Insert
+};
+
+
+inline constexpr std::size_t DEBOUNCER_CHANNEL_BUFFER = 100;
+
+
+
+
+/// -------------- 
+
 class DefaultListener : public efsw::FileWatchListener {
 public:
   void handleFileAction(efsw::WatchID watchid, const std::string &dir,
