@@ -34,6 +34,7 @@
 #include "cli.hpp"
 #include "watcher.hpp"
 #include "watcher.hpp"
+#include "glob.hpp"
 
 
 using std::map;
@@ -259,6 +260,8 @@ class WatchFileListener: public efsw::FileWatchListener {
 
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
+
+  find_package_json();
 
   ConfigLoader<PackageJson> config_loader(schema);
 

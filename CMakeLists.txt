@@ -58,7 +58,25 @@ FetchContent_Declare(efsw
   GIT_TAG master
 )
 
+
 FetchContent_MakeAvailable(efsw)
+
+target_include_directories(cli11_test PRIVATE
+  ${efsw_SOURCE_DIR}/include
+)
+
+
+FetchContent_Declare(p_ranav_glob
+  GIT_REPOSITORY https://github.com/p-ranav/glob.git
+  GIT_TAG master
+)
+
+FetchContent_MakeAvailable(p_ranav_glob)
+
+target_include_directories(cli11_test PRIVATE 
+  ${p_ranav_glob_SOURCE_DIR}/single_include
+)
+
 
 
 target_compile_features(cli11_test PUBLIC cxx_std_20)
@@ -68,11 +86,9 @@ target_link_directories(cli11_test PRIVATE ${V8_LIB})
 target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform dl pthread)
 
 
-target_include_directories(cli11_test PRIVATE
-  ${efsw_SOURCE_DIR}/include
-)
 
 target_link_libraries(cli11_test PRIVATE efsw)
+# target_link_libraries(cli11_test PRIVATE p_ranav_glob)
 
 
 # target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
@@ -88,3 +104,5 @@ target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
 target_compile_definitions(cli11_test PRIVATE V8_COMPRESS_POINTERS V8_ENABLE_SANDBOX ) 
 target_compile_options(cli11_test PRIVATE -fno-rtti) 
 target_link_options(cli11_test PRIVATE -fuse-ld=lld)
+
+
