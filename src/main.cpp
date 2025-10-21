@@ -36,6 +36,8 @@
 #include "watcher.hpp"
 #include "glob.hpp"
 
+#include "blockingconcurrentqueue.h"
+
 
 using std::map;
 using std::string;

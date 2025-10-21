@@ -58,12 +58,20 @@ FetchContent_Declare(efsw
   GIT_TAG master
 )
 
+FetchContent_Declare(concurrentqueue
+        GIT_REPOSITORY https://github.com/cameron314/concurrentqueue.git
+        GIT_TAG master
+)
+
+FetchContent_MakeAvailable(concurrentqueue)
 
 FetchContent_MakeAvailable(efsw)
 
 target_include_directories(cli11_test PRIVATE
   ${efsw_SOURCE_DIR}/include
 )
+
+target_include_directories(cli11_test PRIVATE ${concurrentqueue_SOURCE_DIR})
 
 
 FetchContent_Declare(p_ranav_glob
@@ -88,6 +96,7 @@ target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform d
 
 
 target_link_libraries(cli11_test PRIVATE efsw)
+target_link_libraries(cli11_test PRIVATE concurrentqueue)
 # target_link_libraries(cli11_test PRIVATE p_ranav_glob)
 
 

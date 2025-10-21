@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/efsw-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/googletest-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/p_ranav_glob-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/packageproject.cmake-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/efsw-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/googletest-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/p_ranav_glob-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/CLI11" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/glob" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/json-schema-validator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/json-schema-validator/build/_deps/nlohmann_json-src" vcs="Git" />
+  </component>
+</project>
