@@ -1,6 +1,5 @@
 #include "watcher.h"
 
-#include "cli.hpp"
 #include "core_defs.hpp"
 #include <chrono>
 #include <efsw/FileSystem.hpp>

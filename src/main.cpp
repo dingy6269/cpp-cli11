@@ -28,12 +28,13 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
-#include "config/loader.hpp"
 
-#include "cli.hpp"
 
+#include "config_loader.h"
+#include "cli.h"
 #include "watcher.h"
 #include "glob.h"
+
 #include "efsw/efsw.hpp"
 
 
@@ -219,7 +220,7 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
   return result;
 }
 
-void process_file(RunConfig run_config) {
+void process_file(app::cli::RunConfig run_config) {
   Isolate::CreateParams create_params;
   create_params.array_buffer_allocator =
       v8::ArrayBuffer::Allocator::NewDefaultAllocator();
@@ -246,7 +247,7 @@ void process_file(RunConfig run_config) {
 
 class WatchFileListener: public efsw::FileWatchListener {
   public:
-  explicit WatchFileListener(RunConfig run_config): cfg_(std::move(run_config)) {}
+  explicit WatchFileListener(app::cli::RunConfig run_config): cfg_(std::move(run_config)) {}
 
   void handleFileAction(efsw::WatchID watchid,
                             const std::string &dir,
@@ -255,7 +256,7 @@ class WatchFileListener: public efsw::FileWatchListener {
       process_file(cfg_);      
   }
   private:
-  RunConfig cfg_;
+  app::cli::RunConfig cfg_;
 };
 
 int main(int argc, char *argv[]) {
@@ -274,7 +275,7 @@ int main(int argc, char *argv[]) {
 
   V8Runtime v8(argv[0]);
 
-  auto run_config = CliConfig::parse(argc, argv);
+  auto run_config = app::cli::CliConfig::parse(argc, argv);
 
   std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
   listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));

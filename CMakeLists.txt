@@ -38,13 +38,9 @@ set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/CLI11)
 add_subdirectory(external/json-schema-validator)
 
-add_executable(cli11_test 
-  src/main.cpp
-  src/glob.cpp
-  src/watcher.cpp
-#  external/json-schema-validator/src/json-uri.cpp
-  # external/json-schema-validator/src/json-schema.cpp
-)
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(cli11_test ${SOURCES})
 
 target_include_directories(cli11_test PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/external
