@@ -9,10 +9,6 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
-# TODO: we need to do something about it
-# external + .gitmodules
 external
 dev
 .idea
-
-cli11_test

@@ -1,4 +1,3 @@
-#include "sample.h"
 #include <CLI/CLI.hpp>
 
 #include <map>
@@ -32,8 +31,8 @@
 #include "config/loader.hpp"
 
 #include "cli.hpp"
-#include "watcher.hpp"
-#include "watcher.hpp"
+
+#include "watcher.h"
 #include "glob.h"
 #include "efsw/efsw.hpp"
 
@@ -285,7 +284,7 @@ int main(int argc, char *argv[]) {
   process_file(*run_config);
 
   if (run_config->watch) {
-    watch_dir(std::move(listeners));
+    app::watcher::watch_dir(std::move(listeners));
   }
 
   return 0;
