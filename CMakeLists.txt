@@ -40,6 +40,7 @@ add_subdirectory(external/json-schema-validator)
 
 add_executable(cli11_test 
   src/main.cpp
+  src/glob.cpp
 #  external/json-schema-validator/src/json-uri.cpp
   # external/json-schema-validator/src/json-schema.cpp
 )
