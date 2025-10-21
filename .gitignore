@@ -13,5 +13,6 @@ Makefile
 # external + .gitmodules
 external
 dev
+.idea
 
 cli11_test
