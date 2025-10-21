@@ -13,6 +13,6 @@
             << __FILE__ << ':' << __LINE__ << " | " << #x << " = " << (x) << '\n'; \
     } while (0)
 
-endif // DBG_HPP
+#endif // DBG_HPP
 
 

@@ -35,8 +35,7 @@
 #include "watcher.hpp"
 #include "watcher.hpp"
 #include "glob.hpp"
-
-#include "blockingconcurrentqueue.h"
+#include "efsw/efsw.hpp"
 
 
 using std::map;

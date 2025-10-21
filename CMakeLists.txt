@@ -40,7 +40,7 @@ add_subdirectory(external/json-schema-validator)
 
 add_executable(cli11_test 
   src/main.cpp
-  external/json-schema-validator/src/json-uri.cpp
+#  external/json-schema-validator/src/json-uri.cpp
   # external/json-schema-validator/src/json-schema.cpp
 )
 
@@ -58,14 +58,15 @@ FetchContent_Declare(efsw
   GIT_TAG master
 )
 
+
+FetchContent_MakeAvailable(efsw)
+
 FetchContent_Declare(concurrentqueue
         GIT_REPOSITORY https://github.com/cameron314/concurrentqueue.git
         GIT_TAG master
 )
 
 FetchContent_MakeAvailable(concurrentqueue)
-
-FetchContent_MakeAvailable(efsw)
 
 target_include_directories(cli11_test PRIVATE
   ${efsw_SOURCE_DIR}/include
@@ -96,14 +97,20 @@ target_link_libraries(cli11_test PRIVATE v8_monolith v8_libbase v8_libplatform d
 
 
 target_link_libraries(cli11_test PRIVATE efsw)
-target_link_libraries(cli11_test PRIVATE concurrentqueue)
-# target_link_libraries(cli11_test PRIVATE p_ranav_glob)
+#target_link_libraries(cli11_test PRIVATE concurrentqueue)
+#target_link_libraries(cli11_test PRIVATE p_ranav_glob)
 
 
 # target_link_libraries(cli11_test PRIVATE nlohmann_json::nlohmann_json)
 
 # link flag to a library that does not exist (yet)
 target_link_libraries(cli11_test PRIVATE nlohmann_json_schema_validator)
+
+if(TARGET efsw)
+    message(STATUS "efsw target is present")
+else()
+    message(FATAL_ERROR "efsw target missing")
+endif()
 
 
 # set(CMAKE_C_COMPILER  "/usr/bin/gcc-13"  CACHE FILEPATH "" FORCE)
