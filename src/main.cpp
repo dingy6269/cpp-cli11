@@ -31,13 +31,12 @@
 
 #include <filesystem>
 
-#include "config_loader.h"
 #include "cli.h"
-#include "watcher.h"
+#include "config_loader.h"
 #include "glob.h"
+#include "watcher.h"
 
 #include "efsw/efsw.hpp"
-
 
 using std::map;
 using std::string;
@@ -162,9 +161,6 @@ void V8BridgeProcessor::Log(const char *event) {
   printf("Logged: %s\n", event);
 }
 
-
-
-
 class V8Runtime {
 public:
   explicit V8Runtime(const char *argv0) {
@@ -246,32 +242,30 @@ void process_file(app::cli::RunConfig run_config) {
   }
 }
 
-
-class WatchFileListener: public efsw::FileWatchListener {
-  public:
-  explicit WatchFileListener(app::cli::RunConfig run_config): cfg_(std::move(run_config)), 
-  debouncer_() {
+class WatchFileListener : public efsw::FileWatchListener {
+public:
+  explicit WatchFileListener(app::cli::RunConfig run_config)
+      : cfg_(std::move(run_config)), debouncer_() {
     // TODO: fix namings
     auto capture = [this](app::debouncer::DebouncedEvent e) {
-        process_file(cfg_);      
+      process_file(cfg_);
     };
 
     debouncer_.listen(capture);
   }
 
-  void handleFileAction(efsw::WatchID watchid,
-                            const std::string &dir,
-                            const std::string &filename,
-                            efsw::Action action, std::string oldFilename) override {
+  void handleFileAction(efsw::WatchID watchid, const std::string &dir,
+                        const std::string &filename, efsw::Action action,
+                        std::string oldFilename) override {
 
     fs::path fullpath = fs::path(dir) / filename;
 
     std::cout << "test" << std::endl;
 
-
     debouncer_.add_thread(fullpath, action);
   }
-  private:
+
+private:
   app::cli::RunConfig cfg_;
   app::debouncer::FileDebouncer debouncer_;
 };
@@ -289,21 +283,22 @@ int main(int argc, char *argv[]) {
   // json data = json::parse(package_json_path);
 
   // auto patch = config_loader.Parse(data);
-// 
+  //
   // std::cout << "Here is your patch" << patch.dump(2) << std::endl;
 
   V8Runtime v8(argv[0]);
 
   auto run_config = app::cli::CliConfig::parse(argc, argv);
 
-  std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
-  listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));
-
-  if (!run_config) return 0;
+  if (!run_config)
+    return 0;
 
   process_file(*run_config);
 
   if (run_config->watch) {
+    std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
+    listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));
+
     app::watcher::watch_dir(std::move(listeners));
   }
 
