@@ -78,9 +78,6 @@ void AsyncWatcherDebouncer::loop() {
     if (ev.is_shutdown())
       break;
 
-    std::unordered_map<std::string, DebouncedEvent> bucket;
-    bucket.emplace(ev.path, ev);
-
     const auto deadline = Clock::now() + delay_;
 
     for (;;) {
@@ -92,30 +89,18 @@ void AsyncWatcherDebouncer::loop() {
       const auto left =
           std::chrono::duration_cast<milliseconds>(deadline - now);
 
-      DebouncedEvent tmp;
-      if (!in_.wait_dequeue_timed(tmp, left))
+      DebouncedEvent ev;
+      if (!in_.wait_dequeue_timed(ev, left))
         break;
 
-      if (tmp.is_shutdown()) {
-        publish(bucket);
-        return;
-      }
-
-      bucket.insert_or_assign(tmp.path, std::move(tmp));
-    }
-
-    for (const auto &[key, ev] : bucket) {
-      std::cout << key << " " << ev.path.string() << static_cast<int>(ev.kind)
-                << std::endl;
+      publish_event(ev);
     }
   }
 }
 
-void AsyncWatcherDebouncer::publish(
-    std::unordered_map<std::string, DebouncedEvent> &bucket) {
-  for (const auto &kv : bucket) {
-    kv.second.kind == DebouncedEventKind::Shutdown ? void()
-                                                   : out_.send(kv.second);
+void AsyncWatcherDebouncer::publish_event(DebouncedEvent event) {
+  if (event.kind != DebouncedEventKind::Shutdown) {
+    out_.send(event);
   }
 }
 
@@ -130,77 +115,76 @@ init_debouncer(std::chrono::milliseconds delay) {
   return {std::move(deb), rx};
 }
 
-
 constexpr DebouncedEventKind from_efsw(FileAction action) noexcept {
-    using A = efsw::Action;
+  using A = efsw::Action;
 
-    switch (action) {
-        case A::Add: return DebouncedEventKind::Insert;
-        case A::Delete: return DebouncedEventKind::Remove;
-        case A::Modified: return DebouncedEventKind::Update;
-        // TODO: update
-        case A::Moved: return DebouncedEventKind::Update;
-    };
+  switch (action) {
+  case A::Add:
+    return DebouncedEventKind::Insert;
+  case A::Delete:
+    return DebouncedEventKind::Remove;
+  case A::Modified:
+    return DebouncedEventKind::Update;
+  // TODO: update
+  case A::Moved:
+    return DebouncedEventKind::Update;
+  };
 }
-
 
 FileDebouncer::FileDebouncer() {
-    auto [debouncer, rx] = init_debouncer(std::chrono::milliseconds(1500));
-    debouncer_ = std::move(debouncer);
-    rx_ = std::move(rx);
+  auto [debouncer, rx] = init_debouncer(std::chrono::milliseconds(1500));
+  debouncer_ = std::move(debouncer);
+  rx_ = std::move(rx);
 }
 
-
 void FileDebouncer::join_producers() {
-  for (auto& t: threads_) {
-    if (t.joinable()) { t.join(); }
+  for (auto &t : threads_) {
+    if (t.joinable()) {
+      t.join();
+    }
   };
 }
 
 void FileDebouncer::listen(DebouncerCallback callback) {
-    using namespace app::debouncer;
+  using namespace app::debouncer;
 
-      std::thread consumer([&] {
-      try {
-        // endless loop, watch
-        // should we rewrite here? idk
-        for (;;) {
-          join_producers();
+  std::thread consumer([this, callback] {
+    try {
+      // endless loop, watch
+      // should we rewrite here? idk
+      for (;;) {
+        join_producers();
 
-          DebouncedEvent e;
-          rx_.recv(e);
+        DebouncedEvent e;
+        rx_.recv(e);
 
-          if (e.is_shutdown())
-            break;
+        if (e.is_shutdown())
+          break;
 
-          if (e.is_empty_payload()) {
-            throw std::runtime_error("debounced event has empty path");
-          }
-
-          callback(e);
+        if (e.is_empty_payload()) {
+          throw std::runtime_error("debounced event has empty path");
         }
-      } catch (const std::exception &ex) {
-        throw std::runtime_error("debouncer error (in consumer)");
+
+        callback(e);
       }
-    });
+    } catch (const std::exception &ex) {
+      throw std::runtime_error("debouncer error (in consumer)");
+    }
+  });
 
-    // producer.join();
-    // debouncer_->stop();
-    consumer.detach();
+  // producer.join();
+  // debouncer_->stop();
+  consumer.detach();
 };
 
-void FileDebouncer::add_thread(
-    fs::path fullpath,
-    FileAction action
-) {
-    DebouncedEventKind kind = from_efsw(action);
+void FileDebouncer::add_thread(fs::path fullpath, FileAction action) {
+  DebouncedEventKind kind = from_efsw(action);
 
-    std::thread producer([this, filepath = std::move(fullpath), kind] {
-      debouncer_->push_raw({filepath, kind});
-    });
+  std::thread producer([this, filepath = std::move(fullpath), kind] {
+    debouncer_->push_raw({filepath, kind});
+  });
 
-    threads_.emplace_back(std::move(producer));
+  threads_.emplace_back(std::move(producer));
 };
- 
 
 } // namespace app::debouncer

@@ -65,7 +65,7 @@ public:
 
 private:
     void loop();
-    void publish(std::unordered_map<std::string, DebouncedEvent>& bucket);
+    void publish_event(DebouncedEvent event);
 
     moodycamel::BlockingConcurrentQueue<DebouncedEvent> in_;
     milliseconds delay_;
