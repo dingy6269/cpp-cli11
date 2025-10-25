@@ -12,14 +12,10 @@
 #include <thread>
 #include <typeinfo>
 
-
-
 namespace app::watcher {
 
-
 int watch_dir(
-    std::vector<std::unique_ptr<efsw::FileWatchListener>>&& custom_listeners
-) {
+    std::vector<std::unique_ptr<efsw::FileWatchListener>> &&custom_listeners) {
   return watch_dir(std::move(custom_listeners), true);
 }
 
@@ -60,4 +56,4 @@ int watch_dir(
 
   return 0;
 }
-}
+} // namespace app::watcher
