@@ -14,18 +14,6 @@
 
 
 
-void DefaultListener::handleFileAction(efsw::WatchID watchid, 
-                                       const std::string &dir,
-                                       const std::string &filename, 
-                                       efsw::Action action,
-                                       std::string oldFilename) {
-    DBG(watchid);
-    DBG(dir);
-    DBG(filename);
-    DBG(action);
-    DBG(oldFilename);
-}
-
 namespace app::watcher {
 
 
@@ -43,7 +31,7 @@ int watch_dir(
 
   std::cout << "Watching: " << CurrentPath << std::endl;
 
-  auto add_listener = [&](efsw::FileWatchListener *listener) -> int {
+  auto bind_listener = [&](efsw::FileWatchListener *listener) -> int {
     efsw::WatchID watchId = watcher->addWatch(CurrentPath, listener, recursive);
 
     if (watchId < 0) {
@@ -60,7 +48,7 @@ int watch_dir(
   //   if (add_listener(new DefaultListener())) return 1;
 
   for (auto &listener : custom_listeners) {
-    if (add_listener(listener.get()))
+    if (bind_listener(listener.get()))
       return 1;
   };
 

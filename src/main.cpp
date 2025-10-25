@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string>
 
+#include "debouncer.h"
 #include "libplatform/libplatform.h"
 #include "v8-context.h"
 #include "v8-initialization.h"
@@ -63,7 +64,7 @@ using v8::TryCatch;
 using v8::Value;
 
 using json = nlohmann::json;
-// using fs = std::filesystem
+namespace fs = std::filesystem;
 
 class V8Bridge {
 public:
@@ -248,30 +249,48 @@ void process_file(app::cli::RunConfig run_config) {
 
 class WatchFileListener: public efsw::FileWatchListener {
   public:
-  explicit WatchFileListener(app::cli::RunConfig run_config): cfg_(std::move(run_config)) {}
+  explicit WatchFileListener(app::cli::RunConfig run_config): cfg_(std::move(run_config)), 
+  debouncer_() {
+    // TODO: fix namings
+    auto capture = [this](app::debouncer::DebouncedEvent e) {
+        process_file(cfg_);      
+    };
+
+    debouncer_.listen(capture);
+  }
 
   void handleFileAction(efsw::WatchID watchid,
                             const std::string &dir,
                             const std::string &filename,
                             efsw::Action action, std::string oldFilename) override {
-      process_file(cfg_);      
+
+    fs::path fullpath = fs::path(dir) / filename;
+
+    std::cout << "test" << std::endl;
+
+
+    debouncer_.add_thread(fullpath, action);
   }
   private:
   app::cli::RunConfig cfg_;
+  app::debouncer::FileDebouncer debouncer_;
 };
 
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
 
-  auto package_json_path = app::glob::find_package_json();
+  // TODO: error fix absenfce of package_json
+  // auto package_json_path = app::glob::find_package_json();
 
-  ConfigLoader<PackageJson> config_loader(schema);
+  // ConfigLoader<PackageJson> config_loader(schema);
 
-  json data = json::parse(package_json_path);
+  // std::cout << package_json_path << std::endl;
 
-  auto patch = config_loader.Parse(data);
+  // json data = json::parse(package_json_path);
 
-  std::cout << "Here is your patch" << patch.dump(2) << std::endl;
+  // auto patch = config_loader.Parse(data);
+// 
+  // std::cout << "Here is your patch" << patch.dump(2) << std::endl;
 
   V8Runtime v8(argv[0]);
 

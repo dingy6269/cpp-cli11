@@ -1,12 +1,14 @@
 #pragma once
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <memory>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <filesystem>
 #include "blockingconcurrentqueue.h"
+#include "efsw/efsw.hpp"
 
 namespace app::debouncer {
 using Clock = std::chrono::steady_clock;
@@ -18,6 +20,9 @@ enum class DebouncedEventKind {
     Remove,
     Shutdown
 };
+
+
+constexpr DebouncedEventKind from_efsw(efsw::Action action) noexcept;
 
 struct DebouncedEvent {
     std::filesystem::path path;
@@ -69,7 +74,33 @@ private:
     std::atomic<bool> stop_;
 };
 
+
+using FileAction = efsw::Action;
+using DebouncerCallback = std::function<void(DebouncedEvent)>;
+
+class FileDebouncer {
+public:
+    explicit FileDebouncer();
+    ~FileDebouncer() = default;
+    
+    void listen(
+        DebouncerCallback callback
+    );
+
+    // TODO: add oldFilename
+    void add_thread(std::filesystem::path fullpath,
+        efsw::Action action
+    );
+private:
+    void join_producers();
+
+    std::deque<std::thread> threads_;
+    std::unique_ptr<AsyncWatcherDebouncer> debouncer_;
+    Receiver rx_;
+};
+
+
 std::pair<std::unique_ptr<AsyncWatcherDebouncer>, Receiver>
-init_watcher(std::chrono::milliseconds delay = milliseconds(1500));
+init_debouncer(std::chrono::milliseconds delay = milliseconds(1500));
 
 } 

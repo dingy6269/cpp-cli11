@@ -46,6 +46,7 @@ std::filesystem::path find_package_json(bool recursive) {
   int found = 0;
 
   for (const auto &t : extglob::glob(build_patterns(recursive))) {
+    std::cout << t << std::endl;
     packages.push_back(t);
   };
 
