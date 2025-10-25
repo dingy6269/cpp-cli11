@@ -1,5 +1,0 @@
-{
-    "name": "cli11-test",
-    "version": "0.1.0",
-    "dependencies": ["cli11"]
-}

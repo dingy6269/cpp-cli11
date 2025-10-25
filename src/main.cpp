@@ -1,10 +1,10 @@
-#include "sample.h"
 #include <CLI/CLI.hpp>
 
 #include <map>
 #include <stdlib.h>
 #include <string>
 
+#include "debouncer.h"
 #include "libplatform/libplatform.h"
 #include "v8-context.h"
 #include "v8-initialization.h"
@@ -29,13 +29,14 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
-#include "config/loader.hpp"
+#include <filesystem>
 
-#include "cli.hpp"
-#include "watcher.hpp"
-#include "watcher.hpp"
-#include "glob.hpp"
+#include "cli.h"
+#include "config_loader.h"
+#include "glob.h"
+#include "watcher.h"
 
+#include "efsw/efsw.hpp"
 
 using std::map;
 using std::string;
@@ -62,6 +63,7 @@ using v8::TryCatch;
 using v8::Value;
 
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 class V8Bridge {
 public:
@@ -159,9 +161,6 @@ void V8BridgeProcessor::Log(const char *event) {
   printf("Logged: %s\n", event);
 }
 
-
-
-
 class V8Runtime {
 public:
   explicit V8Runtime(const char *argv0) {
@@ -219,7 +218,7 @@ MaybeLocal<String> read_file(Isolate *isolate, const string &filename) {
   return result;
 }
 
-void process_file(RunConfig run_config) {
+void process_file(app::cli::RunConfig run_config) {
   Isolate::CreateParams create_params;
   create_params.array_buffer_allocator =
       v8::ArrayBuffer::Allocator::NewDefaultAllocator();
@@ -243,30 +242,41 @@ void process_file(RunConfig run_config) {
   }
 }
 
+class WatchFileListener : public efsw::FileWatchListener {
+public:
+  explicit WatchFileListener(app::cli::RunConfig run_config)
+      : cfg_(std::move(run_config)), debouncer_() {
+    // TODO: fix namings
+    auto capture = [this](app::debouncer::DebouncedEvent e) {
+      process_file(cfg_);
+    };
 
-class WatchFileListener: public efsw::FileWatchListener {
-  public:
-  explicit WatchFileListener(RunConfig run_config): cfg_(std::move(run_config)) {}
-
-  void handleFileAction(efsw::WatchID watchid,
-                            const std::string &dir,
-                            const std::string &filename,
-                            efsw::Action action, std::string oldFilename) override {
-      process_file(cfg_);      
+    debouncer_.listen(capture);
   }
-  private:
-  RunConfig cfg_;
+
+  void handleFileAction(efsw::WatchID watchid, const std::string &dir,
+                        const std::string &filename, efsw::Action action,
+                        std::string oldFilename) override {
+
+    fs::path fullpath = fs::path(dir) / filename;
+
+    debouncer_.add_thread(fullpath, action);
+  }
+
+private:
+  app::cli::RunConfig cfg_;
+  app::debouncer::FileDebouncer debouncer_;
 };
 
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
 
-  find_package_json();
+  fs::path package_json_path = app::glob::find_package_json(false);
 
   ConfigLoader<PackageJson> config_loader(schema);
 
-  std::ifstream f("package.json");
-  json data = json::parse(f);
+  std::ifstream package(package_json_path);
+  json data = json::parse(package);
 
   auto patch = config_loader.Parse(data);
 
@@ -274,17 +284,18 @@ int main(int argc, char *argv[]) {
 
   V8Runtime v8(argv[0]);
 
-  auto run_config = CliConfig::parse(argc, argv);
+  auto run_config = app::cli::CliConfig::parse(argc, argv);
 
-  std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
-  listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));
-
-  if (!run_config) return 0;
+  if (!run_config)
+    return 0;
 
   process_file(*run_config);
 
   if (run_config->watch) {
-    watch_dir(std::move(listeners));
+    std::vector<std::unique_ptr<efsw::FileWatchListener>> listeners;
+    listeners.emplace_back((std::make_unique<WatchFileListener>(*run_config)));
+
+    app::watcher::watch_dir(std::move(listeners));
   }
 
   return 0;

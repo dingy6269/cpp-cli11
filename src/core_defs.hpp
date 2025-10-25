@@ -5,6 +5,8 @@
 #include <iostream>
 #include <syncstream>
 
+
+
 #define DBG(x)                                                                     \
     do {                                                                           \
         std::osyncstream(std::cerr)                                                \
@@ -12,3 +14,5 @@
     } while (0)
 
 #endif // DBG_HPP
+
+
