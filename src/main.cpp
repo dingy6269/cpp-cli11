@@ -271,18 +271,16 @@ private:
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
 
-  // TODO: error fix absenfce of package_json
-  // auto package_json_path = app::glob::find_package_json();
+  fs::path package_json_path = app::glob::find_package_json(false);
 
-  // ConfigLoader<PackageJson> config_loader(schema);
+  ConfigLoader<PackageJson> config_loader(schema);
 
-  // std::cout << package_json_path << std::endl;
+  std::ifstream package(package_json_path);
+  json data = json::parse(package);
 
-  // json data = json::parse(package_json_path);
+  auto patch = config_loader.Parse(data);
 
-  // auto patch = config_loader.Parse(data);
-  //
-  // std::cout << "Here is your patch" << patch.dump(2) << std::endl;
+  std::cout << "Here is your patch" << patch.dump(2) << std::endl;
 
   V8Runtime v8(argv[0]);
 

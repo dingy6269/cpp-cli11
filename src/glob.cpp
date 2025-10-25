@@ -1,16 +1,16 @@
 #include "glob.h"
 
 #include <array>
-#include <string_view>
-#include <iostream>
 #include <filesystem>
+#include <iostream>
+#include <string_view>
 
 #include <glob/glob.hpp>
 
 namespace {
-constexpr std::array<std::string_view, 1> VALID_CONFIG_FILES{ "package" };
-constexpr std::array<std::string_view, 1> VALID_CONFIG_EXTENSIONS{ "json" };
-}
+constexpr std::array<std::string_view, 1> VALID_CONFIG_FILES{"package"};
+constexpr std::array<std::string_view, 1> VALID_CONFIG_EXTENSIONS{"json"};
+} // namespace
 
 namespace app::glob {
 std::vector<GlobPattern> build_patterns(bool recursive) {
@@ -21,14 +21,16 @@ std::vector<GlobPattern> build_patterns(bool recursive) {
 
   for (auto file : VALID_CONFIG_FILES) {
     for (auto extension : VALID_CONFIG_EXTENSIONS) {
-      std::string pattern;
-      if (!recursive) {
-        pattern = std::string(file) + "." + std::string(extension);
-      } else {
-        pattern = "**/" + std::string(file) + "." + std::string(extension);
-      };
+      std::string current_pattern =
+          std::string(file) + "." + std::string(extension);
+      std::string recursive_pattern =
+          "**/" + std::string(file) + "." + std::string(extension);
 
-      out.emplace_back(pattern);
+      out.emplace_back(current_pattern);
+
+      if (recursive) {
+        out.emplace_back(recursive_pattern);
+      }
     }
   }
 
@@ -36,7 +38,8 @@ std::vector<GlobPattern> build_patterns(bool recursive) {
 }
 
 std::filesystem::path find_package_json() {
-    return find_package_json(true);
+  // can give segfault (fix)
+  return find_package_json(true);
 }
 
 namespace extglob = ::glob;
@@ -46,10 +49,9 @@ std::filesystem::path find_package_json(bool recursive) {
   int found = 0;
 
   for (const auto &t : extglob::glob(build_patterns(recursive))) {
-    std::cout << t << std::endl;
     packages.push_back(t);
   };
 
   return packages[0];
 };
-}
+} // namespace app::glob
