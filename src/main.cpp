@@ -260,8 +260,6 @@ public:
 
     fs::path fullpath = fs::path(dir) / filename;
 
-    std::cout << "test" << std::endl;
-
     debouncer_.add_thread(fullpath, action);
   }
 

@@ -152,8 +152,6 @@ FileDebouncer::FileDebouncer() {
 
 
 void FileDebouncer::join_producers() {
-  std::cout << threads_.size() << std::endl; 
-
   for (auto& t: threads_) {
     if (t.joinable()) { t.join(); }
   };
@@ -187,8 +185,8 @@ void FileDebouncer::listen(DebouncerCallback callback) {
     });
 
     // producer.join();
-    // deb->stop();
-    consumer.join();
+    // debouncer_->stop();
+    consumer.detach();
 };
 
 void FileDebouncer::add_thread(
@@ -197,11 +195,8 @@ void FileDebouncer::add_thread(
 ) {
     DebouncedEventKind kind = from_efsw(action);
 
-    std::cout << fullpath << std::endl;
-    std::cout << action << std::endl;
-
-    std::thread producer([&] {
-      debouncer_->push_raw({fullpath, kind});
+    std::thread producer([this, filepath = std::move(fullpath), kind] {
+      debouncer_->push_raw({filepath, kind});
     });
 
     threads_.emplace_back(std::move(producer));
