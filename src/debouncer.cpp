@@ -127,7 +127,7 @@ init_watcher(std::chrono::milliseconds delay) {
 
 #ifndef DEMO_MAIN
 
-int main() {
+int debouncer() {
     using namespace app::debouncer;
     
     std::cout << "operational" << std::endl;

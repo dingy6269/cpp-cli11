@@ -3,6 +3,7 @@
 #include <array>
 #include <string_view>
 #include <iostream>
+#include <filesystem>
 
 #include <glob/glob.hpp>
 
@@ -34,20 +35,20 @@ std::vector<GlobPattern> build_patterns(bool recursive) {
   return out;
 }
 
-int find_package_json() {
+std::filesystem::path find_package_json() {
     return find_package_json(true);
 }
 
 namespace extglob = ::glob;
 
-int find_package_json(bool recursive) {
+std::filesystem::path find_package_json(bool recursive) {
+  std::vector<::glob::fs::path> packages;
   int found = 0;
 
   for (const auto &t : extglob::glob(build_patterns(recursive))) {
-    std::cout << "Found config file at " << t << std::endl;
-    ++found;
+    packages.push_back(t);
   };
 
-  return found;
+  return packages[0];
 };
 }

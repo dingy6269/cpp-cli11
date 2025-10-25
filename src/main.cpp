@@ -28,7 +28,7 @@
 #include "v8-template.h"
 #include "v8-value.h"
 
-
+#include <filesystem>
 
 #include "config_loader.h"
 #include "cli.h"
@@ -63,6 +63,7 @@ using v8::TryCatch;
 using v8::Value;
 
 using json = nlohmann::json;
+// using fs = std::filesystem
 
 class V8Bridge {
 public:
@@ -262,12 +263,11 @@ class WatchFileListener: public efsw::FileWatchListener {
 int main(int argc, char *argv[]) {
   const json &schema = JsonSchema<PackageJson>::schema();
 
-  app::glob::find_package_json();
+  auto package_json_path = app::glob::find_package_json();
 
   ConfigLoader<PackageJson> config_loader(schema);
 
-  std::ifstream f("package.json");
-  json data = json::parse(f);
+  json data = json::parse(package_json_path);
 
   auto patch = config_loader.Parse(data);
 
